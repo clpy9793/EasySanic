@@ -9,6 +9,7 @@ import os
 import time
 import random
 import asyncio
+import aiohttp
 from sanic import Sanic
 from sanic import Blueprint
 from sanic.response import json
@@ -23,6 +24,8 @@ from config import config
 
 app = Sanic()
 app.static('/files', '../static')
+
+client_session = None
 
 if config:
     app.config.update(config)
@@ -39,6 +42,8 @@ async def daily_task():
 @app.listener('after_server_start')
 async def after_server_start(app, loop):
     # app.add_task(daily_task())
+    global client_session
+    client_session = aiohttp.ClientSession()
     loop.create_task(daily_task())
 
 
@@ -140,6 +145,37 @@ async def info(req):
 @app.get('/file/<file_name>')
 async def get_file(file_name):
     return await file(file_name)
+
+
+@app.get('/wzgj/get_balance_m')
+async def get_balance_m(req):
+    "查询余额接口"
+    # https:// ysdk.qq.com/mpay/get_balance_m
+    # https://ysdktest.qq.com/mpay/get_balance_m
+    url = "https://ysdktest.qq.com"
+    uri = "/mpay/get_balance_m"
+    rst = await client_session.get('http://127.0.0.1:8000/info')
+    r = await rst.text(encoding='utf8')
+    print(r)
+    return json({})
+
+@app.get('/wzgj/mpay/pay_m')
+async def pay_m(req):
+    "扣除游戏币接口"
+    return json({})    
+
+@app.get('/wzgj/cancel_pay_m')
+async def cancel_pay_m(req):
+    "取消支付接口"
+    return json({})
+
+@app.get('/wzgj/present_m')
+async def present_m(req):
+    "直接赠送接口"
+    return json({})
+
+
+
 
 # 192.168.1.249:8000/user/123
 if __name__ == "__main__":
