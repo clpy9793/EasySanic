@@ -7,9 +7,13 @@
 
 import os
 import time
+import hmac
 import random
 import asyncio
 import aiohttp
+from base64 import b64encode, encodebytes
+from hashlib import sha1
+from urllib.parse import urlencode
 from sanic import Sanic
 from sanic import Blueprint
 from sanic.response import json
@@ -154,7 +158,28 @@ async def get_balance_m(req):
     # https://ysdktest.qq.com/mpay/get_balance_m
     url = "https://ysdktest.qq.com"
     uri = "/mpay/get_balance_m"
-    rst = await client_session.get('http://127.0.0.1:8000/info')
+    sig_uri = '/v3/r'
+    data = {}
+    data['openid'] = ""
+    data['openkey'] = ""
+    data['appid'] = ""
+    data['ts'] = ""
+    data['sig'] = ""
+    data['pf'] = ""
+    data['pfkey'] = ""
+    data['zoneid'] = ""
+    cookies = {}
+    cookies['session_id'] = "open_id"
+    cookies['session_id'] = "hy_gameid"
+    cookies['session_type'] = "kp_actoken"
+    cookies['session_type'] = "wc_actoken"
+    cookies['org_loc'] = '/mpay/get_balance_m'
+    for k, v in cookies.items():
+        cookies[k] = urlencode(v)
+    sig = gen_sign(data, sig_uri, "")
+    data['sig'] = sig
+    url += uri
+    rst = await client_session.get(url)
     r = await rst.text(encoding='utf8')
     print(r)
     return json({})
@@ -174,6 +199,17 @@ async def present_m(req):
     "直接赠送接口"
     return json({})
 
+def gen_sign(data, uri, appkey='', method='GET'):
+    "OpenAPI V3.0"
+    s1 = urlencode(uri).upper()
+    s2 = ""
+    s2 = ["{0}={1}".format(k, v) for k, v in data.items() if k != "sig"]
+    s2 = "&".join(s2)
+    s2 = urlencode(s2).upper()
+    ret = "&".join([method, s1, s2])
+    key = appkey + "&"
+    sig = urlencode(b64encode(hmac.new(key.encode(), ret.encode(), 'sha1').digest()))
+    return sig
 
 
 
