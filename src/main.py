@@ -21,11 +21,13 @@ from bp_wzgj import bp_wzgj
 from bp_admin import bp_admin
 from bp_test import bp_test
 
+
 app = Sanic()
 app.static('/files', '../static')
 app.blueprint(bp_wzgj)
 app.blueprint(bp_admin)
 app.blueprint(bp_test)
+
 
 if config:
     app.config.update(config)
