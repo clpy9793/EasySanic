@@ -8,6 +8,7 @@
 YSDK 支付相关接口
 """
 import os
+import uuid
 import time
 import hmac
 import random
@@ -22,7 +23,6 @@ from sanic.response import *
 
 bp_wzgj = Blueprint('wzgj', url_prefix='/wzgj')
 
-
 @bp_wzgj.get('/test')
 async def test(req):
     return text('bp_wzgj')
@@ -33,24 +33,23 @@ async def get_balance_m(req):
     "查询余额接口"
     # https:// ysdk.qq.com/mpay/get_balance_m
     # https://ysdktest.qq.com/mpay/get_balance_m
-    d = req.args['param']
+    args = req.args['param']
     url = "https://ysdktest.qq.com"
     uri = "/mpay/get_balance_m"
     sig_uri = '/v3/r'
+    channel = 1
     params = {}
-    params['openid'] = ""
-    params['openkey'] = ""
-    params['appid'] = ""
-    params['ts'] = ""
+    params['openid'] = args['openid']
+    params['openkey'] = args['openkey']
+    params['appid'] = args['appid']
+    params['ts'] = int(time.time())
     params['sig'] = ""
-    params['pf'] = ""
-    params['pfkey'] = ""
-    params['zoneid'] = ""
+    params['pf'] = args['pf']
+    params['pfkey'] = args['pfkey']
+    params['zoneid'] = args['zoneid']
     cookies = {}
-    cookies['session_id'] = "open_id"
-    cookies['session_id'] = "hy_gameid"
-    cookies['session_type'] = "kp_actoken"
-    cookies['session_type'] = "wc_actoken"
+    cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
+    cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
     cookies['org_loc'] = '/mpay/get_balance_m'
     for k, v in cookies.items():
         cookies[k] = urlencode(v)
@@ -70,26 +69,25 @@ async def pay_m(req):
     "扣除游戏币接口"
     # https://ysdk.qq.com/mpay/pay_m
     # https://ysdktest.qq.com/mpay/pay_m
-    d = req.args['param']
+    args = req.args['param']
     url = 'https://ysdktest.qq.com'
     uri = "/mpay/pay_m"
     sig_uri = '/v3/r'
+    channel = 1
     params = {}
-    params['openid'] = ""
-    params['openkey'] = ""
-    params['appid'] = ""
-    params['ts'] = ""
+    params['openid'] = args['openid']
+    params['openkey'] = args['openkey']
+    params['appid'] = args['appid']
+    params['ts'] = int(time.time())
     params['sig'] = ""
-    params['pf'] = ""
-    params['pfkey'] = ""
-    params['zoneid'] = ""
-    params['amt'] = ""
-    params['billno'] = ""
+    params['pf'] = args['pf']
+    params['pfkey'] = args['pfkey']
+    params['zoneid'] = args['zoneid']
+    params['amt'] = args['amt']
+    params['billno'] = uuid.uuid4().hex
     cookies = {}
-    cookies['session_id'] = "open_id"
-    cookies['session_id'] = "hy_gameid"
-    cookies['session_type'] = "kp_actoken"
-    cookies['session_type'] = "wc_actoken"
+    cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
+    cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
     cookies['org_loc'] = '/mpay/get_balance_m'
     for k, v in cookies.items():
         cookies[k] = urlencode(v)
@@ -107,29 +105,28 @@ async def pay_m(req):
 
 @bp_wzgj.get('/cancel_pay_m')
 async def cancel_pay_m(req):
-    "取消支付接口"
+    "取消支付接口, 因订单号未确定, 此接口无用"
     # https://ysdk.qq.com/mpay/cancel_pay_m
     # https://ysdktest.qq.com/mpay/cancel_pay_m
     d = req.args['param']
     url = 'https://ysdktest.qq.com'
     uri = "/mpay/cancel_pay_m "
     sig_uri = '/v3/r'
+    channel = 1
     params = {}
-    params['openid'] = ""
-    params['openkey'] = ""
-    params['appid'] = ""
-    params['ts'] = ""
+    params['openid'] = args['openid']
+    params['openkey'] = args['openkey']
+    params['appid'] = args['appid']
+    params['ts'] = int(time.time())
     params['sig'] = ""
-    params['pf'] = ""
-    params['pfkey'] = ""
-    params['zoneid'] = ""
-    params['amt'] = ""
-    params['billno'] = ""
+    params['pf'] = args['pf']
+    params['pfkey'] = args['pfkey']
+    params['zoneid'] = args['zoneid']
+    params['amt'] = args['amt']
+    params['billno'] = args['billno']
     cookies = {}
-    cookies['session_id'] = "open_id"
-    cookies['session_id'] = "hy_gameid"
-    cookies['session_type'] = "kp_actoken"
-    cookies['session_type'] = "wc_actoken"
+    cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
+    cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
     cookies['org_loc'] = '/mpay/get_balance_m'
     for k, v in cookies.items():
         cookies[k] = urlencode(v)
@@ -154,22 +151,21 @@ async def present_m(req):
     url = 'https://ysdktest.qq.com'
     uri = "/mpay/present_m"
     sig_uri = '/v3/r'
+    channel = 1
     params = {}
-    params['openid'] = ""
-    params['openkey'] = ""
-    params['appid'] = ""
-    params['ts'] = ""
+    params['openid'] = args['openid']
+    params['openkey'] = args['openkey']
+    params['appid'] = args['appid']
+    params['ts'] = int(time.time())
     params['sig'] = ""
-    params['pf'] = ""
-    params['pfkey'] = ""
-    params['zoneid'] = ""
-    params['presenttimes'] = ""
-    params['billno'] = ""
+    params['pf'] = args['pf']
+    params['pfkey'] = args['pfkey']
+    params['zoneid'] = args['zoneid']
+    params['presenttimes'] = args['presenttimes']
+    params['billno'] = uuid.uuid4().hex
     cookies = {}
-    cookies['session_id'] = "open_id"
-    cookies['session_id'] = "hy_gameid"
-    cookies['session_type'] = "kp_actoken"
-    cookies['session_type'] = "wc_actoken"
+    cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
+    cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
     cookies['org_loc'] = '/mpay/get_balance_m'
     for k, v in cookies.items():
         cookies[k] = urlencode(v)

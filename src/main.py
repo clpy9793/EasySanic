@@ -16,11 +16,14 @@ from sanic import Sanic
 from sanic import Blueprint
 from sanic.response import *
 from sanic.exceptions import *
+from sanic.config import LOGGING
 from config import config
 from bp_wzgj import bp_wzgj
 from bp_admin import bp_admin
 from bp_test import bp_test
 
+
+LOGGING['loggers']['network']['handlers'] = ['access.log']
 
 app = Sanic()
 app.static('/files', '../static')
@@ -42,15 +45,21 @@ async def daily_task():
 
 
 @app.listener('before_server_start')
-async def after_server_start(app, loop):
+async def before_server_start(app, loop):
     "服务启动之前调用, 用以检查 pid"
     # app.add_task(daily_task())
     # global client_session
     # client_session = aiohttp.ClientSession()
     pid = ""
     async with aiofiles.open('pid.txt', 'r') as f:
-        await f.read()
-    print('before')
+        pid = await f.read()
+    if pid:
+        # print(pid, 'kill')
+        os.system('kill -9 {0}'.format(pid))
+        # os.system('sudo kill -9 {0}'.format(pid))
+
+
+    
 
 
 @app.listener('after_server_start')

@@ -15,19 +15,28 @@ import aiohttp
 from sanic import Sanic
 from sanic import Blueprint
 from sanic.response import *
+# from main.app import test_client as client
+# client = Sanic(__name__).test_client
 
 bp_test = Blueprint('test')
-
 
 @bp_test.route("/test")
 async def test(request):
     "测试用"
     # url = app.url_for('hello')
     url = 'http://localhost:8000/info'
+    # req, ret = client.get(url)
+    # return ret
     async with aiohttp.ClientSession() as session:
         rst = await session.get(url)
         ret = await rst.text(encoding='utf8')
         return html(ret)
+
+@bp_test.get('/debug')
+async def debug(req):
+    for k, v in req.args.items():
+        print(k, '\t', v)
+    return text('')
 
 
 @bp_test.get('/error')
