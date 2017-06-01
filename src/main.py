@@ -23,13 +23,14 @@ from bp_admin import bp_admin
 from bp_test import bp_test
 
 
-LOGGING['loggers']['network']['handlers'] = ['access.log']
+# LOGGING['loggers']['network']['handlers'] = ['access.log']
 
 app = Sanic()
-app.static('/files', '../static')
+app.static('/', '../static')
 app.blueprint(bp_wzgj)
 app.blueprint(bp_admin)
 app.blueprint(bp_test)
+
 
 
 if config:
