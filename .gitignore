@@ -99,3 +99,4 @@ ENV/
 
 # End of https://www.gitignore.io/api/python
 sftp-config.json
+src/bp_wzgj.py

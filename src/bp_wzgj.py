@@ -29,7 +29,7 @@ except ImportError:
 
 
 bp_wzgj = Blueprint('wzgj', url_prefix='/wzgj')
-APP_KEY = ""
+
 
 
 
@@ -41,12 +41,12 @@ async def test(req):
 @bp_wzgj.get('/get_balance_m')
 async def get_balance_m(req):
     "查询余额接口"
-    # https:// ysdk.qq.com/mpay/get_balance_m
+    # https://ysdk.qq.com/mpay/get_balance_m
     # https://ysdktest.qq.com/mpay/get_balance_m
     try:
         print('\n\n\n参数', req.args, '\n\n\n', req.raw_args)
         args = req.raw_args        
-        url = "https://ysdktest.qq.com"
+        url = "https://ysdk.qq.com"
         uri = "/mpay/get_balance_m"
         sig_uri = '/v3/r' + uri
         params = {}
@@ -54,12 +54,14 @@ async def get_balance_m(req):
         params['openid'] = args['puid'].upper()
         params['openkey'] = args['token'].upper()
         params['appid'] = '1106173342'
-        params['ts'] = str(int(time.time()))
+        params['ts'] = int(time.time())
         params['sig'] = ""
         params['pf'] = args['pf']
+        # params['pfkey'] = 'xaxasxqwxw'
         params['pfkey'] = args['pfkey']
-        params['zoneid'] = '1_{0}'.format(args['puid'])
-        params['zoneid'] = '1'
+        # params['pfkey'] = params['pfkey'][:-1] + params['pfkey'][0]
+        # params['zoneid'] = '1_{0}'.format(args['puid'])
+        params['zoneid'] = 1
         cookies = {}
         cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
         cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
@@ -71,8 +73,8 @@ async def get_balance_m(req):
         url += uri
         async with aiohttp.ClientSession(cookies=cookies) as session:
             print('\nparams:\n')
-            for k, v in params.items():
-                print(k, '\t', v)
+            for k in sorted(params.keys()):
+                print(k, '\t', params[k])
             s = "&".join(['{0}={1}'.format(k, params[k]) for k in sorted(params.keys())])
             print('最终发送的请求串\n', url + '?' + s, '\n')
             rst = await session.get(url, params=params)
@@ -230,7 +232,6 @@ def gen_sign(data, uri, appkey=APP_KEY, method='GET'):
     print('\n请求参数\n', s)
     s1 = quote_plus(uri)
     s2 = ""
-    seq = sorted(data.keys())
     s2 = ["{0}={1}".format(k, data[k]) for k in sorted(data.keys()) if k != 'sig']
     s2 = "&".join(s2)
     s2 = quote_plus(s2)
