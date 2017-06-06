@@ -6,7 +6,7 @@
 # @Version : $Id$
 
 import os
-
+APP_KEY = ""
 config = {
 
 }

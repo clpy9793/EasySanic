@@ -26,8 +26,8 @@ from bp_test import bp_test
 # LOGGING['loggers']['network']['handlers'] = ['access.log']
 
 app = Sanic()
-app.static('/', '../static')
-app.blueprint(bp_wzgj)
+# app.static('/', '../static')
+# app.blueprint(bp_wzgj)
 app.blueprint(bp_admin)
 app.blueprint(bp_test)
 
@@ -100,4 +100,4 @@ def server_error(request, exception):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=7979, debug=True)

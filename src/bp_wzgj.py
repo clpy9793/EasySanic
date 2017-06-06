@@ -21,7 +21,7 @@ from base64 import b64encode, encodebytes
 from hashlib import sha1
 from urllib.parse import urlencode, quote, quote_plus
 from sanic import Blueprint
-
+from config import APP_KEY
 try:
     import ujson as json
 except ImportError:
@@ -29,8 +29,6 @@ except ImportError:
 
 
 bp_wzgj = Blueprint('wzgj', url_prefix='/wzgj')
-
-
 
 
 @bp_wzgj.get('/test')
@@ -45,7 +43,7 @@ async def get_balance_m(req):
     # https://ysdktest.qq.com/mpay/get_balance_m
     try:
         print('\n\n\n参数', req.args, '\n\n\n', req.raw_args)
-        args = req.raw_args        
+        args = req.raw_args
         url = "https://ysdk.qq.com"
         uri = "/mpay/get_balance_m"
         sig_uri = '/v3/r' + uri
@@ -223,6 +221,7 @@ def tgen_sign(data, uri, appkey=APP_KEY, method='GET'):
     print('\n结果:\n', sig.strip().lower())
     return sig.strip().lower()
 
+
 def gen_sign(data, uri, appkey=APP_KEY, method='GET'):
     '''OpenAPI V3.0'''
     # data = '''appid=15499&format=json&openid=00000000000000000000000014BDF6E4&openkey=AB43BF3DC5C3C79D358CC5318E41CF59&pf=myapp_m_qq-00000000-android-00000000-ysdk&pfkey=CA641BC173479B8C0B35BC84873B3DB9&ts=1340880299&userip=112.90.139.30&zoneid=1'''
@@ -244,8 +243,6 @@ def gen_sign(data, uri, appkey=APP_KEY, method='GET'):
 
     print('\n所有参数\n', data, '\n', uri, '\n', appkey)
     return sig
-
-
 
 
 def main():

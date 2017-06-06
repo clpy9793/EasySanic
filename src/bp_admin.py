@@ -9,14 +9,30 @@
 """
 import os
 from sanic import Blueprint
-from sanic.response import *
+from sanic import response
+from subprocess import check_output
 
 bp_admin = Blueprint('admin', url_prefix='/admin')
 
 
 @bp_admin.get('/')
 async def test(req):
-    return text('bp_admin')
+    return response.text('bp_admin')
+
+@bp_admin.route('/restart')
+async def restart(req):
+    # origin = os.path.abspath(__file__)
+    # origin_dir = os.path.dirname(origin)
+    # print(os.listdir())
+    os.chdir('/workspace/')
+    # print(check_output(['python restart.py'], shell=True).decode())
+    os.system('python restart.py')
+    return response.text("Success")
+
+
+
+def main():
+    pass
 
 
 if __name__ == '__main__':
