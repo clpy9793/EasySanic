@@ -24,13 +24,17 @@ bp_test = Blueprint('test')
 async def test(request):
     "测试用"
     # url = app.url_for('hello')
-    url = 'http://localhost:8000/info'
-    # req, ret = client.get(url)
-    # return ret
-    async with aiohttp.ClientSession() as session:
-        rst = await session.get(url)
-        ret = await rst.text(encoding='utf8')
-        return html(ret)
+    # url = 'http://localhost:8000/info'
+    # # req, ret = client.get(url)
+    # # return ret
+    # async with aiohttp.ClientSession() as session:
+    #     rst = await session.get(url)
+    #     ret = await rst.text(encoding='utf8')
+    #     return html(ret)
+    
+    request['session']['test'] = request['session'].setdefault('test', 0) + 1
+    print(request['session']['test'])
+    return text('Success')
 
 @bp_test.get('/debug')
 async def debug(req):
