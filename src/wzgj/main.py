@@ -16,112 +16,161 @@ import asyncio
 import aiohttp
 import aiofiles
 import traceback
+import logging
 from sanic import response
 from base64 import b64encode, encodebytes
 from hashlib import sha1
 from urllib.parse import urlencode, quote, quote_plus
 from sanic import Blueprint
 from .config import APP_KEY, YSDK_URL, APP_ID
+from concurrent.futures import TimeoutError
 try:
     import ujson as json
 except ImportError:
     import json
-
+# logging.basicConfig(filename='wzgj/error.log', level=logging.ERROR)
+logger = logging.getLogger('wzgj/errors.log')
+# logging.debug('debug message')
+# logging.info('info message')
+# logging.warn('warn message')
+# logging.error('error message')
+# logging.critical('critical message')
 WS = {}
+
+PAY_PARAM = {}
 
 bp_wzgj = Blueprint('wzgj', url_prefix='/wzgj')
 
 
 @bp_wzgj.get('/test')
 async def test(req):
-    return response.text(APP_KEY)
+    print(req.ip)
+    # logger.info(req.ip)
+    return response.text('%s' % req.ip[0])
+
+
+@bp_wzgj.middleware('response')
+async def print_on_response(request, response):
+    # if request.path.startswith('/wzgj'):
+        # logging.info(response.body)
+
+    # if request.app.blueprint == request.app.blueprints['wzgj']:
+    #     print('wzgj')
+
+    # else:
+    #     print(request.app.blueprint)
+    #     print(request.app.blueprints['wzgj'])
+    #     print('非wzgj')
+    # print('\n\n')
+    # print(dir(request.app))
+    # for i in dir(request.app):
+        # if i[0] == '_':
+        #     continue
+        # print('%s:\t' % i, getattr(request.app, i), '\n')
+    # print('\n\n')
+    # print(id(bp_wzgj))
+    # print(id(request.app))
+    # print(str(request.app.register_blueprint))
+    pass
 
 
 @bp_wzgj.get('/get_balance_m')
 async def get_balance_m(req):
-    "查询余额接口"
-    # https://ysdk.qq.com/mpay/get_balance_m
-    # https://ysdktest.qq.com/mpay/get_balance_m
+    '''查询余额接口'''
+    print('\n\n[NAME]:\t', 'get_balance_m')
     try:
-        print(req.raw_args)
-        args = req.raw_args
         url = YSDK_URL
         uri = "/mpay/get_balance_m"
         sig_uri = '/v3/r' + uri
-        params = {}
-        channel = args['channel']
-        params['openid'] = args['puid'].upper()
-        params['openkey'] = args['token'].upper()
-        params['appid'] = APP_ID
-        params['ts'] = int(time.time())
-        params['sig'] = ""
-        params['pf'] = args['pf']
-        params['pfkey'] = args['pfkey']
-        params['zoneid'] = 1
+        puid = req.raw_args.get('puid').lower()
+        args = PAY_PARAM[puid]
+        args['lastest'] = False
+        ws = WS[puid]
         cookies = {}
+        channel = args['channel']
         cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
         cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
         cookies['org_loc'] = '/mpay/get_balance_m'
         cookies['appid'] = APP_ID
-        print('\nparams\n', params)
         for k, v in cookies.items():
             cookies[k] = quote_plus(v)
-        sig = gen_sign(params, sig_uri)
-        params['sig'] = sig
-        url += uri
         async with aiohttp.ClientSession(cookies=cookies) as session:
-            for k in sorted(params.keys()):
-                print(k, '\t', params[k])
+            # 请求参数
+            args = PAY_PARAM[puid]
+            params = {}
+            params['openid'] = puid.upper()
+            params['openkey'] = args['payToken'].upper()
+            params['appid'] = APP_ID
+            params['ts'] = int(time.time())
+            params['sig'] = ""
+            params['pf'] = args['pf']
+            params['pfkey'] = args['pfkey']
+            params['zoneid'] = 1
+            print('\n[params]:\n', params)
+            print('\n[args]:\n', args)
+
+            sig = gen_sign(params, sig_uri)
+            params['sig'] = sig
+            url += uri
             s = "&".join(['{0}={1}'.format(k, params[k]) for k in sorted(params.keys())])
-            print('最终发送的请求串\n', url + '?' + s, '\n')
+            print('\n[REQ]:\n', url + '?' + s)
             rst = await session.get(url, params=params)
             ret = await rst.text(encoding='utf8')
             ret = json.loads(ret)
-            print('\n\n\n查询结果\n', ret)
+            print('\n\n\n[RET]:\n', ret)
     except Exception as e:
         traceback.print_exc()
     finally:
-        return response.json({'ret': "0", "msg": "success"})
+        print('\n\n----------------------------------------------\n')
+        return response.text(str(random.choice([5555, 6666])))
 
 
 @bp_wzgj.get('/mpay/pay_m')
 async def pay_m(req):
-    "扣除游戏币接口"
-    # https://ysdk.qq.com/mpay/pay_m
-    # https://ysdktest.qq.com/mpay/pay_m
-    args = req.args['param']
-    args = req.raw_args
-    url = 'https://ysdktest.qq.com'
-    uri = "/mpay/pay_m"
-    sig_uri = '/v3/r'
-    channel = 1
-    params = {}
-    params['openid'] = args['openid']
-    params['openkey'] = args['openkey']
-    params['appid'] = args['appid']
-    params['ts'] = int(time.time())
-    params['sig'] = ""
-    params['pf'] = args['pf']
-    params['pfkey'] = args['pfkey']
-    params['zoneid'] = args['zoneid']
-    params['amt'] = args['amt']
-    params['billno'] = uuid.uuid4().hex
-    cookies = {}
-    cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
-    cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
-    cookies['org_loc'] = '/mpay/get_balance_m'
-    for k, v in cookies.items():
-        cookies[k] = quote(v)
-    sig = gen_sign(params, sig_uri, "")
-    params['sig'] = sig
-    url += uri
-    async with aiohttp.ClientSession(cookie=cookies) as session:
-        rst = await session.get(url, params=params)
-        ret = await rst.json()
-        status = int(ret['ret'])
-        if status != 0 and status != 1004:
-            print('扣除游戏币失败\n', ret)
-        return response.json(ret)
+    '''扣除游戏币接口'''
+    print('\n\n[NAME]:\t', 'pay_m')
+    try:
+        url = YSDK_URL
+        uri = "/mpay/pay_m"
+        sig_uri = '/v3/r' + uri
+        puid = req.raw_args.get('puid').lower()
+        args = PAY_PARAM[puid]
+        args['lastest'] = False
+        ws = WS[puid]
+        cookies = {}
+        channel = args['channel']
+        cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
+        cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
+        cookies['org_loc'] = '/mpay/pay_m'
+        for k, v in cookies.items():
+            cookies[k] = quote_plus(v)
+        async with aiohttp.ClientSession(cookie=cookies) as session:
+            # 请求参数
+            args = PAY_PARAM[puid]
+            params = {}
+            params['openid'] = puid.upper()
+            params['openkey'] = args['payToken'].upper()
+            params['appid'] = APP_ID
+            params['ts'] = int(time.time())
+            params['sig'] = ""
+            params['pf'] = args['pf']
+            params['pfkey'] = args['pfkey']
+            params['zoneid'] = 1
+            params['amt'] = req.raw_args['amt']
+            params['billno'] = uuid.uuid4().hex
+            sig = gen_sign(params, sig_uri)
+            params['sig'] = sig
+            url += uri
+            rst = await session.get(url, params=params)
+            ret = await rst.text(encoding='utf8')
+            ret = json.loads(ret)
+            status = int(ret['ret'])
+            if status != 0 and status != 1004:
+                print('扣除游戏币失败\n', ret)
+    except Exception as e:
+        traceback.print_exc()
+    finally:
+        return response.text('success')
 
 
 @bp_wzgj.get('/cancel_pay_m')
@@ -169,68 +218,137 @@ async def cancel_pay_m(req):
 @bp_wzgj.get('/present_m')
 async def present_m(req):
     "直接赠送接口"
-    # https://ysdk.qq.com/mpay/present_m
-    # https://ysdktest.qq.com/mpay/present_m
+    print('\n\n[NAME]:\t', 'present_m')
     try:
-        args = req.raw_args
         url = YSDK_URL
         uri = "/mpay/present_m"
-        sig_uri = '/v3/r'
-        channel = 1
-        params = {}
-        params['openid'] = args['puid'].upper()
-        params['openkey'] = args['token'].upper()
-        params['appid'] = APP_ID
-        params['ts'] = int(time.time())
-        params['sig'] = ""
-        params['pf'] = args['pf']
-        params['pfkey'] = args['pfkey']
-        params['zoneid'] = 1
-        params['presenttimes'] = args.get('presenttimes', 10)
-        params['billno'] = uuid.uuid4().hex
-        print('\nparams\n', params)
+        sig_uri = '/v3/r' + uri
+        puid = req.raw_args.get('puid').lower()
+        args = PAY_PARAM[puid]
+        args['lastest'] = False
+        ws = WS[puid]
         cookies = {}
+        channel = args['channel']
         cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
         cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
         cookies['org_loc'] = '/mpay/present_m'
         for k, v in cookies.items():
             cookies[k] = quote_plus(v)
-        sig = gen_sign(params, sig_uri, "")
-        params['sig'] = sig
-        url += uri
-        async with aiohttp.ClientSession(cookies=cookies) as session:
+        async with aiohttp.ClientSession(cookie=cookies) as session:
+            # 请求参数
+            args = PAY_PARAM[puid]
+            params = {}
+            params['openid'] = puid.upper()
+            params['openkey'] = args['payToken'].upper()
+            params['appid'] = APP_ID
+            params['ts'] = int(time.time())
+            params['sig'] = ""
+            params['pf'] = args['pf']
+            params['pfkey'] = args['pfkey']
+            params['zoneid'] = 1
+            params['presenttimes'] = req.raw_args['presenttimes']
+            params['billno'] = uuid.uuid4().hex
+            sig = gen_sign(params, sig_uri)
+            params['sig'] = sig
+            url += uri
             rst = await session.get(url, params=params)
             ret = await rst.text(encoding='utf8')
             ret = json.loads(ret)
             status = int(ret['ret'])
-            if status != 0:
+            if status != 0 and status != 1004:
                 print('赠送游戏币失败\n', ret)
-            # return response.json(ret)
     except Exception as e:
         traceback.print_exc()
     finally:
-        return response.json({'ret': "0", "msg": "success"})
-
-
-@bp_wzgj.route('/update_token')
-async def update_token(req):
-    payToken = req.raw_args.get('payToken')
-    puid = req.raw_args.get('puid')
-    if puid and payToken:
-        req['session'].setdefault('pay_token_table', {})[puid] = payToken
         return response.text('success')
-    return response.text('fail')
 
 
 @bp_wzgj.websocket('/')
 async def ws_wzgj(req, ws):
+    global WS
+    global PAY_PARAM
+    print('[INFO]: new connection')
     while True:
-        name = await ws.recv()
-        print("\n< {}".format(name))
-        # greeting = "Hello {}!".format(name)
-        # await ws.send(greeting)
-        # print("> {}\n".format(greeting))
+        try:
+            data = await asyncio.wait_for(ws.recv(), timeout=5)
+            if not await handle(data, ws):
+                break
+                # pass
+            # name = await asyncio.wait_for(ws.recv(), timeout=5)
+            # print(name)
+            # print("\n< {}".format(name))
+            # greeting = "Hello {}!".format(name)
+            # await ws.send(greeting)
+            # print("> {}\n".format(greeting))
+        except TimeoutError:
+            if ws.state == 1:
+                if ws not in WS:
+                    await ws.send("1")
+                else:
+                    await ws.send("2")
 
+            # else:
+            #     break
+    puid = WS.get(ws)
+    if puid:
+        WS.pop(puid, 0)
+        WS.pop(ws, 0)
+        PAY_PARAM.pop(puid, 0)
+
+
+async def handle(data, ws):
+    print('\n\n[IN]:\t', data)
+    try:
+        data = parse_query_string(data)
+        msg_id = int(data.get('msg_id'))
+        if not msg_id:
+            return
+        if msg_id == 1:
+            return bind_puid(data, ws)
+        elif msg_id == 2:
+            return update_pay_param(data, ws)
+    except AssertionError as e:
+        print('[ERROR]:\t', e.message)
+    except Exception as e:
+        traceback.print_exc()
+        print('\n\n[ERROR]:\n', data)
+        pass
+
+
+def bind_puid(data, ws):
+    '''绑定puid和ws'''
+    global WS
+    puid = data['puid'].lower()
+    WS[puid] = ws
+    WS[ws] = puid
+    print('\n\n[WS-puid]:\t{0}\t{1}', ws, puid)
+    return True
+
+
+def update_pay_param(data, ws):
+    '''更新支付参数'''
+    global PAY_PARAM
+    puid = WS[ws]
+    if data['puid'] != puid:
+        return False
+    params = {}
+    params['pf'] = data['pf']
+    params['pfkey'] = data['pfkey']
+    params['payToken'] = data['payToken']
+    params['accessToken'] = data['accessToken']
+    params['channel'] = data['channel']
+    params['update_time'] = int(time.time())
+    params['lastest'] = True
+    PAY_PARAM[puid] = params
+    return True
+
+
+def parse_query_string(s):
+    ret = {}
+    for i in s.split('&'):
+        key, val = i.split('=')
+        ret[key] = val
+    return ret
 
 def gen_sign(data, uri, appkey=APP_KEY, method='GET'):
     '''OpenAPI V3.0'''

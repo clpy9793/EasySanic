@@ -7,4 +7,3 @@
 
 import os
 from .main import bp_wzgj
-a = 0

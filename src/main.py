@@ -110,7 +110,8 @@ async def print_on_request(request):
 async def print_on_response(request, response):
     now = time.time()
     cost = now - ALL_REQ_COST.pop(id(request))
-    print('req/s: ', cost)
+    print('req/s: ', cost, '\n')
+
     await session_interface.save(request, response)
 
 
