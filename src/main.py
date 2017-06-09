@@ -138,5 +138,5 @@ if __name__ == "__main__":
 
     # app.run(host="0.0.0.0", port=8000, debug=True, 
     #         before_start=lambda app, loop: asyncio.get_event_loop().run_until_complete(start_server))
-    app.run(host="0.0.0.0", port=8000, debug=True)    
+    app.run(host="0.0.0.0", port=80, debug=True)    
     # main()
