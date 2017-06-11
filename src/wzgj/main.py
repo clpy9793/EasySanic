@@ -91,7 +91,7 @@ async def update(req):
     return response.text('update')
 
 
-@bp_wzgj.get('/get_balance_m')
+@bp_wzgj.get('/mpay/get_balance_m')
 async def get_balance_m(req):
     '''查询余额接口'''
     print('\n\n[NAME]:\t', 'get_balance_m')
@@ -134,10 +134,14 @@ async def get_balance_m(req):
             print('\n[REQ]:\n', url + '?' + s)
             rst = await session.get(url, params=params)
             ret = await rst.text(encoding='utf8')
-            ret = json.loads(ret)
-            if int(ret['ret']) == 0:
-                return response.text(str(ret['balance']))
+            try:
+                ret = json.loads(ret)
+            except Exception:
+                print('[ERROR]:\t', ret)
+                return response.text('-1')
             print('\n\n\n[RET]:\n', ret)
+            if int(ret['ret']) == 0:
+                return response.text(str(ret['balance']))  
     except Exception as e:
         traceback.print_exc()
         return response.text('-1')
@@ -156,13 +160,14 @@ async def pay_m(req):
         args['lastest'] = False
         ws = WS[puid]
         cookies = {}
-        channel = args['channel']
-        cookies['session_id'] = "open_id" if channel == 1 else "hy_gameid"
+        channel = int(args['channel'])
+        cookies['session_id'] = "openid" if channel == 1 else "hy_gameid"
         cookies['session_type'] = "kp_actoken" if channel == 1 else "wc_actoken"
         cookies['org_loc'] = '/mpay/pay_m'
+        cookies['appid'] = APP_ID
         for k, v in cookies.items():
             cookies[k] = quote_plus(v)
-        async with aiohttp.ClientSession(cookie=cookies) as session:
+        async with aiohttp.ClientSession(cookies=cookies) as session:
             # 请求参数
             args = PAY_PARAM[puid]
             params = {}
@@ -175,16 +180,24 @@ async def pay_m(req):
             params['pfkey'] = args['pfkey']
             params['zoneid'] = 1
             params['amt'] = req.raw_args['amt']
-            params['billno'] = uuid.uuid4().hex
+            # params['billno'] = uuid.uuid4().hex
+            params['billno'] = random.randint(1, 99999999999999999)
             sig = gen_sign(params, sig_uri)
             params['sig'] = sig
             print('\n[params]:\n', params)
             print('\n[args]:\n', args)
             print('\n[cookies]:\n', cookies)            
             url += uri
+            s = "&".join(['{0}={1}'.format(k, params[k]) for k in sorted(params.keys())])
+            print('\n[REQ]:\n', url + '?' + s)
             rst = await session.get(url, params=params)
             ret = await rst.text(encoding='utf8')
-            ret = json.loads(ret)
+            try:
+                ret = json.loads(ret)
+            except Exception:
+                print('[ERROR]:\t', ret)
+                return response.text('-1')      
+            print('\n[RET]:\n', ret)
             if int(ret['ret']) == 0:
                 return response.text('success')
             return response.text('-1')
@@ -233,7 +246,7 @@ async def cancel_pay_m(req):
         return response.json(ret)
 
 
-@bp_wzgj.get('/present_m')
+@bp_wzgj.get('/mpay/present_m')
 async def present_m(req):
     '''直接赠送接口'''
     print('\n\n[NAME]:\t', 'present_m')
@@ -273,9 +286,16 @@ async def present_m(req):
             print('\n[args]:\n', args)
             print('\n[cookies]:\n', cookies)            
             url += uri
+            s = "&".join(['{0}={1}'.format(k, params[k]) for k in sorted(params.keys())])
+            print('\n[REQ]:\n', url + '?' + s)
             rst = await session.get(url, params=params)
             ret = await rst.text(encoding='utf8')
-            ret = json.loads(ret)
+            try:
+                ret = json.loads(ret)
+            except Exception:
+                print('[ERROR]:\t', ret)
+                return response.text('-1')              
+            print('\n[RET]:\n', ret)            
             if int(ret['ret']) == 0:
                 return response.text('success')
             return response.text('-1')
@@ -304,6 +324,11 @@ async def ws_wzgj(req, ws):
             # print("> {}\n".format(greeting))
         except TimeoutError:
             print('\n\n[INFO]:')
+            print('\n[WS-COUNT]:\t', len([i for i in WS if isinstance(i, str)]))
+            for k, v in WS.items():
+                if not isinstance(k, str):
+                    continue
+                print('ws:\t', k, 'puid:\t', v, '\n')
             if ws.state == 1:
                 if ws not in WS:
                     print('\n\n[OUT]:\t', 1)
@@ -330,7 +355,7 @@ async def handle(data, ws):
         if not msg_id:
             return
         if msg_id == 1:
-            return bind_puid(data, ws)
+            return await bind_puid(data, ws)
         elif msg_id == 2:
             return update_pay_param(data, ws)
     except AssertionError as e:
@@ -341,10 +366,16 @@ async def handle(data, ws):
         pass
 
 
-def bind_puid(data, ws):
+async def bind_puid(data, ws):
     '''绑定puid和ws'''
     global WS
     puid = data['puid'].lower()
+    if puid in WS:
+        origin = WS[puid]
+        print('\n[INFO]:\t', '重复连接\t', puid, origin.state)
+        WS.pop(puid, 0)
+        WS.pop(origin, 0)
+        await origin.close()
     WS[puid] = ws
     WS[ws] = puid
     print('\n\n[PUID-WS]:\t{0}\t{1}', puid, ws)
