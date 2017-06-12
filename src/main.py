@@ -117,12 +117,12 @@ async def print_on_response(request, response):
 
 @app.exception(NotFound)
 def not_found(request, exception):
-    return text('<p>404 not found</p>')
+    return text('<p>404 not found</p>', status=404)
 
 
 @app.exception(ServerError)
 def server_error(request, exception):
-    return text('<p>500 Server Error</p>')
+    return text('<p>500 Server Error</p>', status=500)
 
 
 def main():
