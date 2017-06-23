@@ -48,6 +48,7 @@ async def test(req):
     # logger.info(req.ip)
     return response.text('%s' % req.ip[0])
 
+
 @bp_wzgj.middleware('request')
 async def on_request(request):
     pass
@@ -77,6 +78,7 @@ async def print_on_response(request, response):
     # print(str(request.app.register_blueprint))
     pass
 
+
 @bp_wzgj.post('/update')
 async def update(req):
     # print(req.json)
@@ -89,6 +91,39 @@ async def update(req):
     print(req.raw_args)
     print(req.json)
     return response.text('update')
+
+
+# @bp_wzgj.get('/post_address')
+# async def post_address(req):
+#     ip = req.raw_args.get('ip')
+#     if ip:
+#         d = u'''{
+#             "version": 1,
+#             "severVerson": "2.140.4",
+#             "updateAddress": "http://app1101994120.imgcache.qzoneapp.com/app1101994120/Inland/Online/VersionV2.130/VersionAndroidAll/2.130.4/update.php",
+#             "rootAddress": "http://app1101994120.imgcache.qzoneapp.com/app1101994120/Inland/Online/VersionV2.130/VersionAndroidAll/2.130.4/",
+#             "defaultSeverID": 61,
+#             "announcementAndroid": {"default": "", "Android_360": ""},
+#             "internalAnnouncementFilePath": "http://%s/announcement.txt",
+#             "internalAnnouncementVersion": 53,
+#             "updateMsg": "",
+#             "serverInUpdate": "",
+#             "updateByteSize": 0,
+#             "severs":
+#             [
+#                 {"id": 1, "name": "挂机一服", "address": %s, "port": 9596, "state": "full", "order": 1},
+#                 {"id": 2, "name": "挂机二服", "address": %s, "port": 9596, "state": "full", "order": 1},
+#                 {"id": 3, "name": "挂机三服", "address": %s, "port": 9596, "state": "full", "order": 1},
+#                 {"id": 4, "name": "挂机四服", "address": %s, "port": 9596, "state": "full", "order": 1}
+#             ]
+#         }''' % (ip, ip, ip, ip, ip)
+#         print(os.listdir('../'))
+#         with open('../static/servers.php', 'w') as f:
+#             f.write(d)
+#         return response.text('更新服务器地址成功')
+
+#     return response.text('更新服务器地址失败')
+
 
 
 @bp_wzgj.get('/mpay/get_balance_m')
@@ -141,7 +176,7 @@ async def get_balance_m(req):
                 return response.text('-1')
             print('\n\n\n[RET]:\n', ret)
             if int(ret['ret']) == 0:
-                return response.text(str(ret['balance']))  
+                return response.text(str(ret['balance']))
     except Exception as e:
         traceback.print_exc()
         return response.text('-1')
@@ -186,7 +221,7 @@ async def pay_m(req):
             params['sig'] = sig
             print('\n[params]:\n', params)
             print('\n[args]:\n', args)
-            print('\n[cookies]:\n', cookies)            
+            print('\n[cookies]:\n', cookies)
             url += uri
             s = "&".join(['{0}={1}'.format(k, params[k]) for k in sorted(params.keys())])
             print('\n[REQ]:\n', url + '?' + s)
@@ -196,7 +231,7 @@ async def pay_m(req):
                 ret = json.loads(ret)
             except Exception:
                 print('[ERROR]:\t', ret)
-                return response.text('-1')      
+                return response.text('-1')
             print('\n[RET]:\n', ret)
             if int(ret['ret']) == 0:
                 return response.text('success')
@@ -284,7 +319,7 @@ async def present_m(req):
             params['sig'] = sig
             print('\n[params]:\n', params)
             print('\n[args]:\n', args)
-            print('\n[cookies]:\n', cookies)            
+            print('\n[cookies]:\n', cookies)
             url += uri
             s = "&".join(['{0}={1}'.format(k, params[k]) for k in sorted(params.keys())])
             print('\n[REQ]:\n', url + '?' + s)
@@ -294,8 +329,8 @@ async def present_m(req):
                 ret = json.loads(ret)
             except Exception:
                 print('[ERROR]:\t', ret)
-                return response.text('-1')              
-            print('\n[RET]:\n', ret)            
+                return response.text('-1')
+            print('\n[RET]:\n', ret)
             if int(ret['ret']) == 0:
                 return response.text('success')
             return response.text('-1')
@@ -409,6 +444,7 @@ def parse_query_string(s):
         key, val = i.split('=')
         ret[key] = val
     return ret
+
 
 def gen_sign(data, uri, appkey=APP_KEY, method='GET'):
     '''OpenAPI V3.0'''
